@@ -30,6 +30,16 @@ prebuilt_etc {
     filename_from_src: true,
 }
 
+java_library {
+    name: "SwitchButtonSettings-aidl",
+    srcs: [
+        "src/**/*.aidl",
+    ],
+    aidl: {
+        local_include_dirs: ["src"],
+    },
+}
+
 // app package
 android_app {
     name: "SwitchButtonSettings",
@@ -42,13 +52,13 @@ android_app {
     srcs: [
         "src/**/*.kt",
         "src/**/*.java",
-        "src/**/*.aidl",
     ],
     resource_dirs: ["res"],
     optimize: {
         proguard_flags_files: ["proguard.flags"],
     },
     static_libs : [
+        "SwitchButtonSettings-aidl",
         "androidx.activity_activity-compose",
         "androidx.compose.foundation_foundation",
         "androidx.compose.runtime_runtime",
@@ -57,5 +67,6 @@ android_app {
         "androidx.compose.ui_ui-tooling",
         "androidx.compose.ui_ui-graphics",
         "androidx.datastore_datastore-preferences",
+        "androidx.lifecycle_lifecycle-viewmodel-compose",
     ],
 }
