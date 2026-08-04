@@ -35,7 +35,7 @@ object SoundProfilesSwitchActionHandler : SwitchActionHandler() {
             SoundProfile.VIBRATE -> AudioManager.RINGER_MODE_VIBRATE
             SoundProfile.RING_AND_VIBRATE -> AudioManager.RINGER_MODE_NORMAL
         }
-        context.audioManager().ringerMode = ringerMode
+        context.audioManager().ringerModeInternal = ringerMode
 
         return Result.success(Unit)
     }
