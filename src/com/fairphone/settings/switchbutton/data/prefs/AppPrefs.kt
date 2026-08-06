@@ -10,8 +10,10 @@ package com.fairphone.settings.switchbutton.data.prefs
 
 import android.content.Context
 import androidx.datastore.core.DataStore
+import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.fairphone.settings.switchbutton.data.model.SoundProfile
@@ -22,14 +24,17 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
 const val APP_PREFS_DATASTORE = "app_prefs"
-val Context.appPrefs: DataStore<Preferences> by preferencesDataStore(name = APP_PREFS_DATASTORE)
+val Context.appPrefs: DataStore<Preferences> by preferencesDataStore(
+    name = APP_PREFS_DATASTORE,
+    corruptionHandler = ReplaceFileCorruptionHandler { emptyPreferences() }
+)
 
 class AppPrefs(context: Context) {
 
     private val dataStore: DataStore<Preferences> = context.appPrefs
 
     companion object {
-        private val DEFAULT_SWITCH_STATE = SwitchState.UP.name
+        private val DEFAULT_SWITCH_STATE = SwitchState.UP
         private val KEY_SWITCH_STATE = stringPreferencesKey("switch_state")
         private val PREF_KEY_DEFAULT_HOME_APP = stringPreferencesKey("default_home_app")
         private val KEY_SOUND_PROFILE_UP = stringPreferencesKey("sound_profile_up")
@@ -40,8 +45,8 @@ class AppPrefs(context: Context) {
 
     fun getLastKnownSwitchStateFlow(): Flow<SwitchState> {
         return dataStore.data.map { prefs ->
-            prefs[KEY_SWITCH_STATE] ?: DEFAULT_SWITCH_STATE
-        }.map { SwitchState.valueOf(it) }
+            safeEnumValueOf(prefs[KEY_SWITCH_STATE], DEFAULT_SWITCH_STATE)
+        }
     }
 
     suspend fun setLastKnownSwitchState(state: SwitchState) {
@@ -70,8 +75,8 @@ class AppPrefs(context: Context) {
 
     fun getSoundProfileUpFlow(): Flow<SoundProfile> {
         return dataStore.data.map { prefs ->
-            prefs[KEY_SOUND_PROFILE_UP]
-        }.map { it?.let { SoundProfile.valueOf(it) } ?: DEFAULT_SOUND_PROFILE_UP }
+            safeEnumValueOf(prefs[KEY_SOUND_PROFILE_UP], DEFAULT_SOUND_PROFILE_UP)
+        }
     }
 
     suspend fun setSoundProfileUp(profile: SoundProfile) {
@@ -82,8 +87,8 @@ class AppPrefs(context: Context) {
 
     fun getSoundProfileDownFlow(): Flow<SoundProfile> {
         return dataStore.data.map { prefs ->
-            prefs[KEY_SOUND_PROFILE_DOWN]
-        }.map { it?.let { SoundProfile.valueOf(it) } ?: DEFAULT_SOUND_PROFILE_DOWN }
+            safeEnumValueOf(prefs[KEY_SOUND_PROFILE_DOWN], DEFAULT_SOUND_PROFILE_DOWN)
+        }
     }
 
     suspend fun setSoundProfileDown(profile: SoundProfile) {
@@ -91,4 +96,12 @@ class AppPrefs(context: Context) {
             prefs[KEY_SOUND_PROFILE_DOWN] = profile.name
         }
     }
+}
+
+/**
+ * Safely parses an enum string name, returning [default] if null or invalid.
+ */
+inline fun <reified T : Enum<T>> safeEnumValueOf(name: String?, default: T): T {
+    if (name == null) return default
+    return runCatching { enumValueOf<T>(name) }.getOrDefault(default)
 }
